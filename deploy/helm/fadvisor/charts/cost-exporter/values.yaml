@@ -1,0 +1,43 @@
+# Default values for prometheus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+CostExporterName: "cost-exporter"
+
+replicaCount: 1
+
+# image for prometheus deployment
+image:
+  repository: "docker.io/gocrane/fadvisor-cost-exporter"
+  pullPolicy: Always
+  tag: "f6bf4b5"
+
+service:
+  type: ClusterIP
+  port: 8081
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+tolerations:
+  - key: "node-role.kubernetes.io/master"
+    operator: "Exists"
+    effect: "NoSchedule"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 750Mi
+  limits:
+    cpu: 1
+    memory: 1Gi
+
+costExporterParam:
+  secretid:
+  secretkey:

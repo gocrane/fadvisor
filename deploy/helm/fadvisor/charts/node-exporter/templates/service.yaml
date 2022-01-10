@@ -1,0 +1,22 @@
+kind: Service
+apiVersion: v1
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '{{ .Values.service.port }}'
+  labels:
+    app: {{ .Values.NodeExporterName }}
+  name: {{ .Values.NodeExporterName }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - name: {{ .Values.NodeExporterName }}
+      protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: 9100
+      {{- if (and (eq .Values.service.type "NodePort") (not (empty .Values.service.nodePort))) }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+  selector:
+    app: {{ .Values.NodeExporterName }}

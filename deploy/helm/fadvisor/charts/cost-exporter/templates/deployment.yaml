@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.CostExporterName }}
+  name: {{ .Values.CostExporterName }}
+  namespace:  {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.CostExporterName }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.CostExporterName }}
+    spec:
+      serviceAccountName: {{ .Values.CostExporterName }}
+      containers:
+      - name: {{ .Values.CostExporterName }}
+        image:  {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        command:
+          - /cost-exporter
+          - --v=4
+          - --secretid={{ .Values.costExporterParam.secretid }}
+          - --secretkey={{ .Values.costExporterParam.secretkey }}
+        {{- with .Values.resources }}
+        resources:
+        {{- toYaml . | nindent 10 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

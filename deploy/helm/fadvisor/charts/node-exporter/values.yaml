@@ -1,0 +1,35 @@
+# Default values for prometheus.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+NodeExporterName: "node-exporter"
+
+image:
+  repository: "prom/node-exporter"
+  pullPolicy: Always
+  tag: "v1.1.1"
+
+#
+#resources:
+#  requests:
+#    cpu: 150m
+#    memory: 180Mi
+#  limits:
+#    cpu: 150m
+#    memory: 180Mi
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+tolerations:
+  - operator: "Exists"
+
+service:
+  type: NodePort
+  port: 9100

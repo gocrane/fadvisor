@@ -1,0 +1,13 @@
+dependencies:
+  - name: kube-state-metrics
+    condition: fadvisor.kube-state-metrics.enabled,kube-state-metrics.enabled
+    repository: file://./charts/kube-state-metrics
+  - name: node-exporter
+    condition: fadvisor.node-exporter.enabled,node-exporter.enabled
+    repository: file://./charts/node-exporter
+  - name: prometheus
+    condition: fadvisor.prometheus.enabled,prometheus.enabled
+    repository: file://./charts/prometheus
+  - name: grafana
+    condition: fadvisor.grafana.enabled,grafana.enabled
+    repository: file://./charts/grafana

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fadvisor-cost-exporter
+  namespace: crane-system
+spec:
+  ports:
+    - name: https
+      port: 443
+      targetPort: 6443
+    - name: http
+      port: 8081
+      targetPort: 8081
+  selector:
+    app: fadvisor-cost-exporter
