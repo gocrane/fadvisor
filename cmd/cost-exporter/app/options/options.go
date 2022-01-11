@@ -72,12 +72,9 @@ func (o *Options) Complete() error {
 
 // Validate all required options.
 func (o *Options) Validate() error {
-	if o.SecretId == "" && o.SecretKey == "" {
-		if o.ClusterId == "" {
-			return fmt.Errorf("must specify the cluster id")
-		}
-		if o.AppId == "" {
-			return fmt.Errorf("must specify the app id")
+	if o.Provider == string(cloudprice.TencentCloud) {
+		if o.SecretId == "" || o.SecretKey == "" {
+			return fmt.Errorf("must specify the secret id and secret key for cloud %v", o.Provider)
 		}
 	}
 	return nil
@@ -118,6 +115,7 @@ func (o *Options) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&o.AppId, "appid", "", "app id of the cluster")
 	flags.StringVar(&o.SecretId, "secretid", "", "secret id of user to access cloud resource api")
 	flags.StringVar(&o.SecretKey, "secretkey", "", "secret key of user to access cloud resource api")
+	flags.StringVar(&o.Provider, "provider", "default", "cloud provider the cost-exporter running on, now support default and qcloud only.")
 
 	flags.StringVar(&o.ClientConfig.Kubeconfig, "kubeconfig",
 		o.ClientConfig.Kubeconfig, "Path to kubeconfig file with authorization and master location information.")

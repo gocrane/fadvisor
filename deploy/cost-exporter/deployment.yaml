@@ -46,5 +46,3 @@ spec:
           command:
             - /cost-exporter
             - --v=4
-            - --secretId={{Config.SecretId}}
-            - --secretKey={{Config.SecretKey}}

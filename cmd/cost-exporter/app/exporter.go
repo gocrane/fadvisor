@@ -7,6 +7,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice/defaultcloud"
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice/tencentcloud"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/events"
 	"k8s.io/client-go/tools/leaderelection"
@@ -22,7 +25,6 @@ import (
 	cost_exporter "github.com/gocrane/fadvisor/pkg/cost-exporter"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cache"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice"
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice/tencentcloud"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/costmodel"
 	storeprometheus "github.com/gocrane/fadvisor/pkg/cost-exporter/store/prometheus"
 	"github.com/gocrane/fadvisor/pkg/util"
@@ -93,8 +95,9 @@ func Run(ctx context.Context, opts *options.Options) error {
 
 	providerConfig := cloudprice.NewProviderConfig(&opts.CustomPrice)
 
+	nodes := k8sCache.GetNodes()
+	provider := opts.Provider
 	if qcc.Region == "" {
-		nodes := k8sCache.GetNodes()
 		for _, node := range nodes {
 			region := cloudprice.DetectRegion(node)
 			qcc.Region = region
@@ -108,7 +111,12 @@ func Run(ctx context.Context, opts *options.Options) error {
 
 	klog.Infof("qcc: %+v", qcc.QCloudClientProfile)
 
-	cloudPrice := tencentcloud.NewTencentCloud(qcc, providerConfig, k8sCache)
+	cloudPrice := defaultcloud.NewDefaultCloud(providerConfig, k8sCache)
+
+	if provider == string(cloudprice.TencentCloud) {
+		cloudPrice = tencentcloud.NewTencentCloud(qcc, providerConfig, k8sCache)
+	}
+
 	err = cloudPrice.WarmUp()
 	if err != nil {
 		return err
