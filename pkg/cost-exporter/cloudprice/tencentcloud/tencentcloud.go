@@ -14,13 +14,10 @@ import (
 
 	"github.com/gocrane/fadvisor/pkg/cloudsdk/qcloud"
 	sdkcvm "github.com/gocrane/fadvisor/pkg/cloudsdk/qcloud/cvm"
+	"github.com/gocrane/fadvisor/pkg/consts"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cache"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice"
 	"github.com/gocrane/fadvisor/pkg/util"
-)
-
-const (
-	GB = 1024 * 1024 * 1024
 )
 
 var _ cloudprice.CloudPrice = &TencentCloud{}
@@ -126,10 +123,10 @@ func (tc *TencentCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node 
 	mem := float64(memory.Value())
 	return &cloudprice.Node{
 		BaseInstancePrice: cloudprice.BaseInstancePrice{
-			Cost:             fmt.Sprintf("%v", cfg.CpuHourlyPrice*cpu+cfg.RamGBHourlyPrice*mem/GB),
+			Cost:             fmt.Sprintf("%v", cfg.CpuHourlyPrice*cpu+cfg.RamGBHourlyPrice*mem/consts.GB),
 			Cpu:              fmt.Sprintf("%v", cpu),
 			CpuHourlyCost:    fmt.Sprintf("%v", cfg.CpuHourlyPrice),
-			Ram:              fmt.Sprintf("%v", mem/GB),
+			Ram:              fmt.Sprintf("%v", mem/consts.GB),
 			RamBytes:         fmt.Sprintf("%v", mem),
 			RamGBHourlyCost:  fmt.Sprintf("%v", cfg.RamGBHourlyPrice),
 			DefaultCpuPrice:  fmt.Sprintf("%v", cfg.CpuHourlyPrice),
@@ -181,7 +178,7 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 		cpu = float64(*instance.CPU)
 	}
 	if instance.Memory != nil {
-		mem = float64(*instance.Memory) * GB
+		mem = float64(*instance.Memory) * consts.GB
 	}
 	if instance.InstanceType != nil {
 		insType = *instance.InstanceType
@@ -195,7 +192,7 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 			BaseInstancePrice: cloudprice.BaseInstancePrice{
 				Cost:            fmt.Sprintf("%v", cost),
 				Cpu:             fmt.Sprintf("%v", cpu),
-				Ram:             fmt.Sprintf("%v", mem/GB),
+				Ram:             fmt.Sprintf("%v", mem/consts.GB),
 				RamBytes:        fmt.Sprintf("%v", mem),
 				DefaultCpuPrice: fmt.Sprintf("%v", cfg.CpuHourlyPrice),
 				DefaultRamPrice: fmt.Sprintf("%v", cfg.RamGBHourlyPrice),
@@ -211,7 +208,7 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 			BaseInstancePrice: cloudprice.BaseInstancePrice{
 				Cost:            fmt.Sprintf("%v", cost),
 				Cpu:             fmt.Sprintf("%v", cpu),
-				Ram:             fmt.Sprintf("%v", mem/GB),
+				Ram:             fmt.Sprintf("%v", mem/consts.GB),
 				RamBytes:        fmt.Sprintf("%v", mem),
 				DefaultCpuPrice: fmt.Sprintf("%v", cfg.CpuHourlyPrice),
 				DefaultRamPrice: fmt.Sprintf("%v", cfg.RamGBHourlyPrice),
@@ -228,7 +225,7 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 			BaseInstancePrice: cloudprice.BaseInstancePrice{
 				Cost:            fmt.Sprintf("%v", cost),
 				Cpu:             fmt.Sprintf("%v", cpu),
-				Ram:             fmt.Sprintf("%v", mem/GB),
+				Ram:             fmt.Sprintf("%v", mem/consts.GB),
 				RamBytes:        fmt.Sprintf("%v", mem),
 				DefaultCpuPrice: fmt.Sprintf("%v", cfg.CpuHourlyPrice),
 				DefaultRamPrice: fmt.Sprintf("%v", cfg.RamGBHourlyPrice),
@@ -341,7 +338,7 @@ func (tc *TencentCloud) computeNodeBreakdownCost(cfg *cloudprice.CustomPricing, 
 			cpuToRAMRatio = 0
 		}
 
-		ramGB := ram / GB
+		ramGB := ram / consts.GB
 		if math.IsNaN(ramGB) {
 			klog.V(3).Infof("ramGB is NaN. Setting to 0. node: %v, key: %v", node.Name, tc.GetKey(node).Features())
 			ramGB = 0

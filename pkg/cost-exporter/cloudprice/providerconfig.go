@@ -13,6 +13,7 @@ import (
 )
 
 type CustomPricing struct {
+	Region           string  `json:"region"`
 	Provider         string  `json:"provider"`
 	Description      string  `json:"description"`
 	CpuHourlyPrice   float64 `json:"cpuHourlyPrice"`
