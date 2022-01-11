@@ -13,7 +13,6 @@ fadvisor has a collection of exporters to collect metrics about cost and other f
 
  - `exporters` are used to collect metrics guided by `FinOps`.
    - now a cost-exporter is available, and other exporters can be integrated
- - `apiserver` used to do some logic for aggregate data and proxy
  
 # Concept
 Fadvisor Cost model is a way to estimate and breakdown the resource price to each container or pod and other cloud native resource in kubernetes. Then, users can insight the costs by labels or other dimensions to view costs of what you care about.
