@@ -36,7 +36,7 @@ Now there is a cost-exporter is available, which now support tencent cloud provi
 
 ## Deploy all components by one command
 ```
-helm install fadvisor deploy/helm/fadvisor -n crane-system  --set cost-exporter.costExporterParam.secretid={{your cloud secret id}} --set cost-exporter.costExporterParam.secretkey={{your cloud secret key}}
+helm install fadvisor deploy/helm/fadvisor -n crane-system  --set cost-exporter.extraArgs.provider={cloud provider, now support qcloud} --set cost-exporter.extraArgs.secretid={{your cloud secret id}} --set cost-exporter.extraArgs.secretkey={{your cloud secret key}}
 ```
 Except cost-exporter, it will install following components in your system by default.
 ```
@@ -55,12 +55,18 @@ dependencies:
     repository: file://./charts/grafana
 ```
 
-## Install one by one
-
-install cost-exporter, you must specify secretid and secretkey
+install on local, it will use default config.
 
 ```
-helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set costExporterParam.secretid={{your cloud secret id}} --set costExporterParam.secretkey={{your cloud secret key}}
+helm install fadvisor deploy/helm/fadvisor -n crane-system
+```
+
+## Install one by one
+
+install cost-exporter, you must specify cloud provider and its secretid & secretkey; if you do not specify, it will use default pricing config.
+
+```
+helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
 ```
 
 install other components
@@ -80,7 +86,7 @@ You can deploy the cost-exporter to your tke cluster to collect the metric, use 
 ### 1. deploy cost-exporter
 #### install by helm
 ```
-helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set costExporterParam.secretid={{your cloud secret id}} --set costExporterParam.secretkey={{your cloud secret key}}
+helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
 ```
 
 #### install by kubectl
@@ -97,6 +103,7 @@ containers:
   command:
     - /cost-exporter
     - --v=4
+    - --provider=qcloud
     - --secretId=
     - --secretKey=
 ```
@@ -106,6 +113,7 @@ configure following scrape target to your prometheus.
 
 ```
 - job_name: "fadvisor-cost-exporter"
+    honor_timestamps: true
     scrape_interval: 5m
     scheme: http
     metrics_path: /metrics

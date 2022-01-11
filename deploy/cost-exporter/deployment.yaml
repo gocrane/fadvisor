@@ -41,7 +41,7 @@ spec:
           operator: Exists
       containers:
         - name: fadvisor-cost-exporter
-          image: docker.io/gocrane/fadvisor-cost-exporter:f6bf4b5
+          image: docker.io/gocrane/fadvisor-cost-exporter:8b3ece1
           imagePullPolicy: IfNotPresent
           command:
             - /cost-exporter
