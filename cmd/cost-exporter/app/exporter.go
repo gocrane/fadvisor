@@ -105,8 +105,10 @@ func Run(ctx context.Context, opts *options.Options) error {
 		}
 	}
 
-	if qcc.Region == "" {
-		return fmt.Errorf("no region info found. must specify")
+	if provider != string(cloudprice.DefaultCloud) {
+		if qcc.Region == "" {
+			return fmt.Errorf("no region info found. must specify region for provider %v", qcc.Region)
+		}
 	}
 
 	klog.Infof("qcc: %+v", qcc.QCloudClientProfile)
