@@ -10,7 +10,7 @@ replicaCount: 1
 image:
   repository: "docker.io/gocrane/fadvisor-cost-exporter"
   pullPolicy: Always
-  tag: "f6bf4b5"
+  tag: "8b3ece1"
 
 service:
   type: ClusterIP
