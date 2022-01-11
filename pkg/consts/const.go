@@ -14,3 +14,7 @@ const (
 	// DefaultRetryPeriod is the default RetryPeriod for leader election.
 	DefaultRetryPeriod = 5 * time.Second
 )
+
+const (
+	GB = 1024 * 1024 * 1024
+)

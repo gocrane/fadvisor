@@ -20,9 +20,8 @@ cost-exporter:
       operator: "Exists"
       effect: "NoSchedule"
 
-  costExporterParam:
-    secretid:
-    secretkey:
+  extraArgs:
+    v: 4
 
 node-exporter:
   enabled: true
