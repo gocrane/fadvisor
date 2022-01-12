@@ -6,32 +6,32 @@
 
 ---
 
-fadvisor(finops advisor) is used to solve the `FinOps Observalibility`, it can be integrated with Crane to help users to improve the `cost visualization` and `optimization`. Also, it can be integrated with your monitoring system as a metric exporter.
+fadvisor(finops advisor) provides capability of `FinOps Observalibility`, it can be integrated with Crane to help users to improve the `cost visualization` and `cost optimization`. Also, it can be integrated with your monitoring system as a metric exporter.
 
 
-fadvisor has a collection of exporters to collect metrics about cost and other finops metrics. 
+fadvisor has a collection of exporters to collect metrics about cost and other metrics. 
 
- - `exporters` are used to collect metrics guided by `FinOps`.
+ - `exporters` collects metrics guided by `FinOps`.
    - now a cost-exporter is available, and other exporters can be integrated
+ - `apiserver` aggregates collected data and calculates cloud cost based on usage and price  
  
 # Concept
-Fadvisor Cost model is a way to estimate and breakdown the resource price to each container or pod and other cloud native resource in kubernetes. Then, users can insight the costs by labels or other dimensions to view costs of what you care about.
+fadvisor Cost model provides a way to estimate and breakdown the resource price of each container, pod, or other resources in kubernetes. Then, users can have cost insight by viewing cost grouped by labels or other dimensions.
 
-This is an idea from `FinOps`, because the traditional billing and pricing system for cloud resource is not adaptive to cloud native resource.
+Please note that Cost model is to **estimate cost**, not to replace the billing, because real billing depends on the billing system.
 
-Note Cost model now is just used to **estimate cost not to replace the billing**, because real billing depends on the billing system.
-
-Model is an experimental implementation of the cost allocation and showback & chargeback from the FinOps.
+Cost model is an implementation of the cost allocation and showback & chargeback from the FinOps.
 	  
 	1. The simplest cost model is to estimate a resource price of all nodes or pods by the same price.
-	   for example, when compute costs, you can assume all container's cpu & ram unit price is the same, 2$ Core/Hour, 0.3$ Gib/Hour
+	   For example, when compute costs, you can assume all container's cpu & ram unit price is the same, 2$ Core/Hour, 0.3$ Gib/Hour
 
 	2. Advanced cost model is to estimate a resource price by cost breakdown.
-	   this theory is based on each cloud machine instance is different price with different instance type and charge type.
-	   so the containers in different node type or eks pod has different price
+	   This theory is based on that price of each cloud machine instance with different instance type and charge type is different.
+	   So the containers price in different node type is different.
 
 # Tutorial
-Now there is a cost-exporter is available, which now support tencent cloud provider to collect the cloud instance pricing metrics.
+Cost-Exporter is a metrics exporter which collects cloud instance price information by calling Cloud Billing API and exports the price information as metrics. 
+Any cloud provider can implement the API and Crane will work for the specific Cloud, Tencent Cloud is supported in current release.
 
 ## Deploy all components by one command
 ```
@@ -62,7 +62,8 @@ helm install fadvisor deploy/helm/fadvisor -n crane-system
 
 ## Install one by one
 
-install cost-exporter, you must specify cloud provider and its secretid & secretkey; if you do not specify, it will use default pricing config.
+To install cost-exporter, you must specify cloud provider and your cloud account credentials as secretid & secretkey.
+If you are running Crane in your private cloud, default price will be applied. 
 
 ```
 helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
@@ -78,7 +79,7 @@ helm install grafana deploy/helm/fadvisor/charts/grafana -n crane-system
 
 
 ## Integrated with existing monitoring components
-If you has an prometheus and grafana, you can just only deploy the exporter and do some configure.
+If you have Prometheus and Grafana installed, you can just deploy the exporter and change related configuration.
 
 You can deploy the cost-exporter to your tke cluster to collect the metric, use prometheus to scrape the metric, and following dashboards can be used;
 
