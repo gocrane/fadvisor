@@ -8,12 +8,14 @@ import (
 
 	"github.com/gocrane/fadvisor/pkg/consts"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cache"
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice"
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprovider"
 	"github.com/gocrane/fadvisor/pkg/util"
 )
 
+const Name = "default"
+
 type DefaultCloud struct {
-	providerConfig *cloudprice.ProviderConfig
+	priceConfig *cloudprovider.PriceConfig
 
 	cache cache.Cache
 }
@@ -41,24 +43,24 @@ func (tc *DefaultCloud) WarmUp() error {
 func (tc *DefaultCloud) Refresh() {
 }
 
-func NewDefaultCloud(config *cloudprice.ProviderConfig, cache cache.Cache) cloudprice.CloudPrice {
+func NewDefaultCloud(config *cloudprovider.PriceConfig, cache cache.Cache) cloudprovider.CloudPrice {
 	return &DefaultCloud{
-		providerConfig: config,
-		cache:          cache,
+		priceConfig: config,
+		cache:       cache,
 	}
 }
 
 // UpdateConfigFromConfigMap update CustomPricing from configmap
-func (tc *DefaultCloud) UpdateConfigFromConfigMap(conf map[string]string) (*cloudprice.CustomPricing, error) {
-	return tc.providerConfig.UpdateConfigFromConfigMap(conf)
+func (tc *DefaultCloud) UpdateConfigFromConfigMap(conf map[string]string) (*cloudprovider.CustomPricing, error) {
+	return tc.priceConfig.UpdateConfigFromConfigMap(conf)
 }
 
 // GetConfig return CustomPricing
-func (tc *DefaultCloud) GetConfig() (*cloudprice.CustomPricing, error) {
-	return tc.providerConfig.GetConfig()
+func (tc *DefaultCloud) GetConfig() (*cloudprovider.CustomPricing, error) {
+	return tc.priceConfig.GetConfig()
 }
 
-func (tc *DefaultCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node *v1.Node) (*cloudprice.Node, error) {
+func (tc *DefaultCloud) getDefaultNodePrice(cfg *cloudprovider.CustomPricing, node *v1.Node) (*cloudprovider.Node, error) {
 	usageType := "Default"
 	insType, _ := util.GetInstanceType(node.Labels)
 	region := cfg.Region
@@ -66,8 +68,8 @@ func (tc *DefaultCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node 
 	memory := node.Status.Capacity[v1.ResourceMemory]
 	cpu := float64(cpuCores.Value())
 	mem := float64(memory.Value())
-	return &cloudprice.Node{
-		BaseInstancePrice: cloudprice.BaseInstancePrice{
+	return &cloudprovider.Node{
+		BaseInstancePrice: cloudprovider.BaseInstancePrice{
 			Cost:             fmt.Sprintf("%v", cfg.CpuHourlyPrice*cpu+cfg.RamGBHourlyPrice*mem/consts.GB),
 			Cpu:              fmt.Sprintf("%v", cpu),
 			CpuHourlyCost:    fmt.Sprintf("%v", cfg.CpuHourlyPrice),
@@ -85,8 +87,8 @@ func (tc *DefaultCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node 
 	}, nil
 }
 
-func (tc *DefaultCloud) GetNodesCost() (map[string]*cloudprice.Node, error) {
-	nodes := make(map[string]*cloudprice.Node)
+func (tc *DefaultCloud) GetNodesCost() (map[string]*cloudprovider.Node, error) {
+	nodes := make(map[string]*cloudprovider.Node)
 	cfg, err := tc.GetConfig()
 	if err != nil {
 		return nodes, err
@@ -107,12 +109,12 @@ func (tc *DefaultCloud) GetNodesCost() (map[string]*cloudprice.Node, error) {
 	return nodes, nil
 }
 
-func (tc *DefaultCloud) computeNodeBreakdownCost(cfg *cloudprice.CustomPricing, node *v1.Node) (*cloudprice.Node, error) {
+func (tc *DefaultCloud) computeNodeBreakdownCost(cfg *cloudprovider.CustomPricing, node *v1.Node) (*cloudprovider.Node, error) {
 	return tc.getDefaultNodePrice(cfg, node)
 }
 
-func (tc *DefaultCloud) GetPodsCost() (map[string]*cloudprice.Pod, error) {
-	pods := make(map[string]*cloudprice.Pod)
+func (tc *DefaultCloud) GetPodsCost() (map[string]*cloudprovider.Pod, error) {
+	pods := make(map[string]*cloudprovider.Pod)
 
 	cfg, err := tc.GetConfig()
 	if err != nil {
@@ -139,7 +141,7 @@ func (tc *DefaultCloud) GetPodsCost() (map[string]*cloudprice.Pod, error) {
 			klog.Errorf("Failed to computeNodeBreakdownCost pod: %v, node: %v", klog.KObj(pod), klog.KObj(node))
 			continue
 		}
-		podPrice := &cloudprice.Pod{
+		podPrice := &cloudprovider.Pod{
 			BaseInstancePrice: nodePrice.BaseInstancePrice,
 		}
 		pods[key] = podPrice
@@ -147,7 +149,7 @@ func (tc *DefaultCloud) GetPodsCost() (map[string]*cloudprice.Pod, error) {
 	return pods, nil
 }
 
-func (tc *DefaultCloud) GetNodesPricing() (map[string]*cloudprice.Price, error) {
-	results := make(map[string]*cloudprice.Price)
+func (tc *DefaultCloud) GetNodesPricing() (map[string]*cloudprovider.Price, error) {
+	results := make(map[string]*cloudprovider.Price)
 	return results, nil
 }

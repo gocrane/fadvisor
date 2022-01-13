@@ -11,7 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/costmodel"
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudcost"
 )
 
 var metricsInit sync.Once
@@ -60,7 +60,7 @@ func init() {
 
 // CostMetricEmitter export cost metric
 type CostMetricEmitter struct {
-	costModel costmodel.CostModel
+	costModel cloudcost.CostModel
 
 	nodeCpuCostGv   *prometheus.GaugeVec
 	nodeRamCostGv   *prometheus.GaugeVec
@@ -73,7 +73,7 @@ type CostMetricEmitter struct {
 	stopCh         <-chan struct{}
 }
 
-func NewCostMetricEmitter(costModel costmodel.CostModel, updateInterval time.Duration, stopCh <-chan struct{}) *CostMetricEmitter {
+func NewCostMetricEmitter(costModel cloudcost.CostModel, updateInterval time.Duration, stopCh <-chan struct{}) *CostMetricEmitter {
 	return &CostMetricEmitter{
 		costModel:       costModel,
 		updateInterval:  updateInterval,

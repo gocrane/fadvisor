@@ -1,4 +1,4 @@
-package cloudprice
+package cloudprovider
 
 import (
 	"fmt"
@@ -12,6 +12,11 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+type CloudConfig struct {
+	CloudConfigFile string `json:"cloudConfigFile"`
+	Provider        string `json:"provider"`
+}
+
 type CustomPricing struct {
 	Region           string  `json:"region"`
 	Provider         string  `json:"provider"`
@@ -20,7 +25,7 @@ type CustomPricing struct {
 	RamGBHourlyPrice float64 `json:"ramGBHourlyPrice"`
 }
 
-type ProviderConfig struct {
+type PriceConfig struct {
 	lock          sync.Mutex
 	customPricing *CustomPricing
 }
@@ -54,14 +59,14 @@ func DetectProvider(node *v1.Node) ProviderType {
 	}
 }
 
-func NewProviderConfig(customPricing *CustomPricing) *ProviderConfig {
-	return &ProviderConfig{
+func NewProviderConfig(customPricing *CustomPricing) *PriceConfig {
+	return &PriceConfig{
 		customPricing: customPricing,
 	}
 }
 
 // UpdateConfigFromConfigMap update CustomPricing from configmap
-func (pc *ProviderConfig) UpdateConfigFromConfigMap(priceConf map[string]string) (*CustomPricing, error) {
+func (pc *PriceConfig) UpdateConfigFromConfigMap(priceConf map[string]string) (*CustomPricing, error) {
 	pc.lock.Lock()
 	defer pc.lock.Unlock()
 	for k, v := range priceConf {
@@ -75,7 +80,7 @@ func (pc *ProviderConfig) UpdateConfigFromConfigMap(priceConf map[string]string)
 }
 
 // GetConfig return CustomPricing
-func (pc *ProviderConfig) GetConfig() (*CustomPricing, error) {
+func (pc *PriceConfig) GetConfig() (*CustomPricing, error) {
 	pc.lock.Lock()
 	defer pc.lock.Unlock()
 	return pc.customPricing, nil

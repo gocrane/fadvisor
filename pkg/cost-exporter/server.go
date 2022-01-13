@@ -10,15 +10,14 @@ import (
 	"time"
 
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	componentbaseconfig "k8s.io/component-base/config"
 	"k8s.io/klog/v2"
 
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudcost"
 	"github.com/gocrane/fadvisor/pkg/util"
-	componentbaseconfig "k8s.io/component-base/config"
-
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/costmodel"
 )
 
-func NewServer(model costmodel.CostModel, bind string, debugging componentbaseconfig.DebuggingConfiguration) *Server {
+func NewServer(model cloudcost.CostModel, bind string, debugging componentbaseconfig.DebuggingConfiguration) *Server {
 	return &Server{
 		model:     model,
 		bind:      bind,
@@ -28,14 +27,14 @@ func NewServer(model costmodel.CostModel, bind string, debugging componentbaseco
 }
 
 type Server struct {
-	model     costmodel.CostModel
+	model     cloudcost.CostModel
 	bind      string
 	server    *http.Server
 	debugging componentbaseconfig.DebuggingConfiguration
 }
 
 func (s *Server) RegisterHandlers() {
-	baseHandler := util.NewBaseHandler("apiserver", s.debugging)
+	baseHandler := util.NewBaseHandler("fadvisor", s.debugging)
 	baseHandler.Handle("/nodes/cost", s.NodesCostHandler())
 	baseHandler.Handle("/nodes/pricing", s.NodesPriceHandler())
 

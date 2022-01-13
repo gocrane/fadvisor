@@ -16,11 +16,36 @@ import (
 	sdkcvm "github.com/gocrane/fadvisor/pkg/cloudsdk/qcloud/cvm"
 	"github.com/gocrane/fadvisor/pkg/consts"
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cache"
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice"
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprovider"
 	"github.com/gocrane/fadvisor/pkg/util"
 )
 
-var _ cloudprice.CloudPrice = &TencentCloud{}
+var _ cloudprovider.CloudPrice = &TencentCloud{}
+
+const Name = "qcloud"
+
+type CloudConfig struct {
+	Credentials   `name:"credentials" value:"optional"`
+	ClientProfile `name:"clientProfile" value:"optional"`
+}
+
+// Credentials use user defined SecretId and SecretKey
+type Credentials struct {
+	ClusterId string
+	AppId     string
+	SecretId  string
+	SecretKey string
+}
+
+type ClientProfile struct {
+	Debug                 bool
+	DefaultLimit          int64
+	DefaultLanguage       string
+	DefaultTimeoutSeconds int
+	Region                string
+	DomainSuffix          string
+	Scheme                string
+}
 
 type qcloudKey struct {
 	SpotLabelName  string
@@ -67,7 +92,7 @@ func (k *qcloudKey) Region() string {
 type TencentCloud struct {
 	cvm *sdkcvm.CVMClient
 
-	providerConfig *cloudprice.ProviderConfig
+	priceConfig *cloudprovider.PriceConfig
 
 	lock sync.Mutex
 	// cached standard price quota
@@ -83,11 +108,11 @@ type TencentCloud struct {
 	cache cache.Cache
 }
 
-func NewTencentCloud(qcloudConf *qcloud.QCloudClientConfig, config *cloudprice.ProviderConfig, cache cache.Cache) cloudprice.CloudPrice {
+func NewTencentCloud(qcloudConf *qcloud.QCloudClientConfig, config *cloudprovider.PriceConfig, cache cache.Cache) cloudprovider.CloudPrice {
 	cvmClient := sdkcvm.NewCVMClient(qcloudConf)
 	return &TencentCloud{
 		cvm:             cvmClient,
-		providerConfig:  config,
+		priceConfig:     config,
 		cache:           cache,
 		standardPricing: make(map[string]*cvm.InstanceTypeQuotaItem),
 		instances:       make(map[string]*sdkcvm.QCloudInstancePrice),
@@ -95,13 +120,13 @@ func NewTencentCloud(qcloudConf *qcloud.QCloudClientConfig, config *cloudprice.P
 }
 
 // UpdateConfigFromConfigMap update CustomPricing from configmap
-func (tc *TencentCloud) UpdateConfigFromConfigMap(conf map[string]string) (*cloudprice.CustomPricing, error) {
-	return tc.providerConfig.UpdateConfigFromConfigMap(conf)
+func (tc *TencentCloud) UpdateConfigFromConfigMap(conf map[string]string) (*cloudprovider.CustomPricing, error) {
+	return tc.priceConfig.UpdateConfigFromConfigMap(conf)
 }
 
 // GetConfig return CustomPricing
-func (tc *TencentCloud) GetConfig() (*cloudprice.CustomPricing, error) {
-	return tc.providerConfig.GetConfig()
+func (tc *TencentCloud) GetConfig() (*cloudprovider.CustomPricing, error) {
+	return tc.priceConfig.GetConfig()
 }
 
 func (tc *TencentCloud) getNodeRegion(node *v1.Node) string {
@@ -113,7 +138,7 @@ func (tc *TencentCloud) getNodeRegion(node *v1.Node) string {
 	}
 }
 
-func (tc *TencentCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node *v1.Node) (*cloudprice.Node, error) {
+func (tc *TencentCloud) getDefaultNodePrice(cfg *cloudprovider.CustomPricing, node *v1.Node) (*cloudprovider.Node, error) {
 	usageType := "Default"
 	insType, _ := util.GetInstanceType(node.Labels)
 	region := tc.getNodeRegion(node)
@@ -121,8 +146,8 @@ func (tc *TencentCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node 
 	memory := node.Status.Capacity[v1.ResourceMemory]
 	cpu := float64(cpuCores.Value())
 	mem := float64(memory.Value())
-	return &cloudprice.Node{
-		BaseInstancePrice: cloudprice.BaseInstancePrice{
+	return &cloudprovider.Node{
+		BaseInstancePrice: cloudprovider.BaseInstancePrice{
 			Cost:             fmt.Sprintf("%v", cfg.CpuHourlyPrice*cpu+cfg.RamGBHourlyPrice*mem/consts.GB),
 			Cpu:              fmt.Sprintf("%v", cpu),
 			CpuHourlyCost:    fmt.Sprintf("%v", cfg.CpuHourlyPrice),
@@ -141,9 +166,9 @@ func (tc *TencentCloud) getDefaultNodePrice(cfg *cloudprice.CustomPricing, node 
 }
 
 // do not support virtual node, virtual node has dynamic price depends on its eks pods
-func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, error) {
-	nodePrice := &cloudprice.Node{
-		BaseInstancePrice: cloudprice.BaseInstancePrice{},
+func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprovider.Node, error) {
+	nodePrice := &cloudprovider.Node{
+		BaseInstancePrice: cloudprovider.BaseInstancePrice{},
 	}
 	cfg, err := tc.GetConfig()
 	if err != nil {
@@ -188,8 +213,8 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 		// prepaid original price is for one month.
 		// todo: we divided by 30*24 hours to compute a avg hourly cost now
 		cost := *price.OriginalPrice / float64(30*24)
-		return &cloudprice.Node{
-			BaseInstancePrice: cloudprice.BaseInstancePrice{
+		return &cloudprovider.Node{
+			BaseInstancePrice: cloudprovider.BaseInstancePrice{
 				Cost:            fmt.Sprintf("%v", cost),
 				Cpu:             fmt.Sprintf("%v", cpu),
 				Ram:             fmt.Sprintf("%v", mem/consts.GB),
@@ -204,8 +229,8 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 		}, nil
 	} else if usageType == qcloud.INSTANCECHARGETYPE_POSTPAID_BY_HOUR {
 		cost := *price.UnitPrice
-		return &cloudprice.Node{
-			BaseInstancePrice: cloudprice.BaseInstancePrice{
+		return &cloudprovider.Node{
+			BaseInstancePrice: cloudprovider.BaseInstancePrice{
 				Cost:            fmt.Sprintf("%v", cost),
 				Cpu:             fmt.Sprintf("%v", cpu),
 				Ram:             fmt.Sprintf("%v", mem/consts.GB),
@@ -221,8 +246,8 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 	} else if usageType == qcloud.INSTANCECHARGETYPE_SPOTPAID {
 		// now use the unit price too.
 		cost := *price.UnitPrice
-		return &cloudprice.Node{
-			BaseInstancePrice: cloudprice.BaseInstancePrice{
+		return &cloudprovider.Node{
+			BaseInstancePrice: cloudprovider.BaseInstancePrice{
 				Cost:            fmt.Sprintf("%v", cost),
 				Cpu:             fmt.Sprintf("%v", cpu),
 				Ram:             fmt.Sprintf("%v", mem/consts.GB),
@@ -240,8 +265,8 @@ func (tc *TencentCloud) getCloudInstancePrice(node *v1.Node) (*cloudprice.Node, 
 	}
 }
 
-func (tc *TencentCloud) GetNodesCost() (map[string]*cloudprice.Node, error) {
-	nodes := make(map[string]*cloudprice.Node)
+func (tc *TencentCloud) GetNodesCost() (map[string]*cloudprovider.Node, error) {
+	nodes := make(map[string]*cloudprovider.Node)
 	cfg, err := tc.GetConfig()
 	if err != nil {
 		return nodes, err
@@ -265,7 +290,7 @@ func (tc *TencentCloud) GetNodesCost() (map[string]*cloudprice.Node, error) {
 	return nodes, nil
 }
 
-func (tc *TencentCloud) computeNodeBreakdownCost(cfg *cloudprice.CustomPricing, node *v1.Node) (*cloudprice.Node, error) {
+func (tc *TencentCloud) computeNodeBreakdownCost(cfg *cloudprovider.CustomPricing, node *v1.Node) (*cloudprovider.Node, error) {
 	cnodePrice, err := tc.getCloudInstancePrice(node)
 	if err != nil {
 		klog.Errorf("Failed to get node pricing, node: %v, key: %v, err: %v", node.Name, "key", tc.GetKey(node).Features(), err)
@@ -395,8 +420,8 @@ func (tc *TencentCloud) computeNodeBreakdownCost(cfg *cloudprice.CustomPricing, 
 	return &newCnode, nil
 }
 
-func (tc *TencentCloud) GetPodsCost() (map[string]*cloudprice.Pod, error) {
-	pods := make(map[string]*cloudprice.Pod)
+func (tc *TencentCloud) GetPodsCost() (map[string]*cloudprovider.Pod, error) {
+	pods := make(map[string]*cloudprovider.Pod)
 
 	cfg, err := tc.GetConfig()
 	if err != nil {
@@ -427,7 +452,7 @@ func (tc *TencentCloud) GetPodsCost() (map[string]*cloudprice.Pod, error) {
 			klog.Errorf("Failed to computeNodeBreakdownCost pod: %v, node: %v", klog.KObj(pod), klog.KObj(node))
 			continue
 		}
-		podPrice := &cloudprice.Pod{
+		podPrice := &cloudprovider.Pod{
 			BaseInstancePrice: nodePrice.BaseInstancePrice,
 		}
 		pods[key] = podPrice
@@ -460,18 +485,18 @@ func (tc *TencentCloud) GetKey(node *v1.Node) *qcloudKey {
 	return key
 }
 
-func (tc *TencentCloud) GetNodesPricing() (map[string]*cloudprice.Price, error) {
+func (tc *TencentCloud) GetNodesPricing() (map[string]*cloudprovider.Price, error) {
 	tc.instanceLock.RLock()
 	defer tc.instanceLock.RUnlock()
-	results := make(map[string]*cloudprice.Price)
+	results := make(map[string]*cloudprovider.Price)
 	for id, insPrice := range tc.instances {
 		qPrice := insPrice.Price.InstancePrice
-		results[id] = &cloudprice.Price{
+		results[id] = &cloudprovider.Price{
 			InstanceType: *insPrice.Instance.InstanceType,
 			ChargeType:   *insPrice.Instance.InstanceChargeType,
 			VCpu:         fmt.Sprintf("%v", *insPrice.Instance.CPU),
 			Memory:       fmt.Sprintf("%v", *insPrice.Instance.Memory),
-			CvmPrice: &cloudprice.PriceItem{
+			CvmPrice: &cloudprovider.PriceItem{
 				UnitPrice:                   qPrice.UnitPrice,
 				ChargeUnit:                  qPrice.ChargeUnit,
 				OriginalPrice:               qPrice.OriginalPrice,
