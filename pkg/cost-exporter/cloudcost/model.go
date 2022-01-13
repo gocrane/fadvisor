@@ -1,10 +1,10 @@
-package costmodel
+package cloudcost
 
 import (
 	"fmt"
 
 	"github.com/gocrane/fadvisor/pkg/cost-exporter/cache"
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice"
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprovider"
 )
 
 type ContainerAllocation struct {
@@ -32,53 +32,52 @@ cost model is a way to estimate and breakdown the resource price to each contain
 
 // CostModel define a model
 type CostModel interface {
-	// GetNodesCost, key is name
-	// GetNodesCost get all the real nodes price of kubernetes cluster.
-	GetNodesCost() (map[string]*cloudprice.Node, error)
+	// GetNodesCost get all the real nodes price of kubernetes cluster with name as the key.
+	GetNodesCost() (map[string]*cloudprovider.Node, error)
 	// GetPodsCost get the eks or tke pod price.
 	// if the pod is in the real node of kubernetes cluster, then its price is computed from the instance backed the node by cost breakdown.
 	// if the pod is in virtual node of kubernetes cluster, then its price came from the pod billing directly or the virtual machine instance price backed the the pod.
 	// Note!!! In distributed cloud, the cluster master maybe in one cloud provider, but the nodes in the cluster maybe in multiple clouds from different cloud providers
 	// so the node and pod pricing is crossing clouds, currently do not support it.
 	// GetPodsCost, key is namespace/name
-	GetPodsCost() (map[string]*cloudprice.Pod, error)
+	GetPodsCost() (map[string]*cloudprovider.Pod, error)
 
 	// UpdateConfigFromConfigMap update CustomPricing from configmap
-	UpdateConfigFromConfigMap(map[string]string) (*cloudprice.CustomPricing, error)
+	UpdateConfigFromConfigMap(map[string]string) (*cloudprovider.CustomPricing, error)
 	// GetConfig return CustomPricing
-	GetConfig() (*cloudprice.CustomPricing, error)
+	GetConfig() (*cloudprovider.CustomPricing, error)
 
 	// ContainerAllocation return the container resource allocation. resource allocation is max(request, usage)
 	ContainerAllocation() (map[string]*ContainerAllocation, error)
 
-	GetNodesPricing() (map[string]*cloudprice.Price, error)
+	GetNodesPricing() (map[string]*cloudprovider.Price, error)
 }
 
 type model struct {
 	cache    cache.Cache
-	provider cloudprice.CloudPrice
+	provider cloudprovider.CloudPrice
 }
 
-func NewCostModel(cache cache.Cache, provider cloudprice.CloudPrice) CostModel {
+func NewCloudCost(cache cache.Cache, provider cloudprovider.CloudPrice) CostModel {
 	return &model{
 		cache:    cache,
 		provider: provider,
 	}
 }
 
-func (m *model) GetNodesCost() (map[string]*cloudprice.Node, error) {
+func (m *model) GetNodesCost() (map[string]*cloudprovider.Node, error) {
 	return m.provider.GetNodesCost()
 }
 
-func (m *model) GetPodsCost() (map[string]*cloudprice.Pod, error) {
+func (m *model) GetPodsCost() (map[string]*cloudprovider.Pod, error) {
 	return m.provider.GetPodsCost()
 }
 
-func (m *model) UpdateConfigFromConfigMap(cfg map[string]string) (*cloudprice.CustomPricing, error) {
+func (m *model) UpdateConfigFromConfigMap(cfg map[string]string) (*cloudprovider.CustomPricing, error) {
 	return m.provider.UpdateConfigFromConfigMap(cfg)
 }
 
-func (m *model) GetConfig() (*cloudprice.CustomPricing, error) {
+func (m *model) GetConfig() (*cloudprovider.CustomPricing, error) {
 	return m.provider.GetConfig()
 }
 
@@ -87,6 +86,6 @@ func (m *model) ContainerAllocation() (map[string]*ContainerAllocation, error) {
 	return nil, fmt.Errorf("not implement")
 }
 
-func (m *model) GetNodesPricing() (map[string]*cloudprice.Price, error) {
+func (m *model) GetNodesPricing() (map[string]*cloudprovider.Price, error) {
 	return m.provider.GetNodesPricing()
 }
