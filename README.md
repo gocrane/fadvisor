@@ -1,4 +1,4 @@
-# Fadvisor: Finance Advisor
+# Fadvisor: FinOps Advisor
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/gocrane/fadvisor)](https://goreportcard.com/report/github.com/gocrane/fadvisor)
 [![GoDoc](https://godoc.org/github.com/gocrane/fadvisor?status.svg)](https://godoc.org/github.com/gocrane/fadvisor)
@@ -9,17 +9,17 @@
 
 ---
 
-fadvisor(finops advisor) provides capability of `FinOps Observalibility`, it can be integrated with Crane to help users to improve the `cost visualization` and `cost optimization`. Also, it can be integrated with your monitoring system as a metric exporter.
+Fadvisor(FinOps Advisor) provides capability of `FinOps Observalibility`, it can be integrated with Crane to help users to improve the `cost visualization` and `cost optimization`. Also, it can be integrated with your monitoring system as a metric exporter.
 
 
-fadvisor has a collection of exporters to collect metrics about cost and other metrics. 
+Fadvisor has a collection of exporters to collect metrics about cost and other metrics. 
 
  - `exporters` collects metrics guided by `FinOps`.
    - now a cost-exporter is available, and other exporters can be integrated
  - `apiserver` aggregates collected data and calculates cloud cost based on usage and price  
  
 # Concept
-fadvisor Cost model provides a way to estimate and breakdown the resource price of each container, pod, or other resources in kubernetes. Then, users can have cost insight by viewing cost grouped by labels or other dimensions.
+Fadvisor Cost model provides a way to estimate and breakdown the resource price of each container, pod, or other resources in kubernetes. Then, users can have cost insight by viewing cost grouped by labels or other dimensions.
 
 Please note that Cost model is to **estimate cost**, not to replace the billing, because real billing depends on the billing system.
 
@@ -57,7 +57,7 @@ dependencies:
     repository: file://./charts/grafana
 ```
 
-install on local, it will use default config.
+Install on local, it will use default config.
 
 ```
 helm install fadvisor deploy/helm/fadvisor -n crane-system
@@ -72,7 +72,7 @@ If you are running Crane in your private cloud, default price will be applied.
 helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
 ```
 
-install other components
+Install other components.
 ```
 helm install kube-state-metrics deploy/helm/fadvisor/charts/kube-state-metrics -n crane-system
 helm install node-exporter deploy/helm/fadvisor/charts/node-exporter -n crane-system
@@ -86,18 +86,18 @@ If you have Prometheus and Grafana installed, you can just deploy the exporter a
 
 You can deploy the cost-exporter to your tke cluster to collect the metric, use prometheus to scrape the metric, and following dashboards can be used;
 
-### 1. deploy cost-exporter
-#### install by helm
+### 1. Deploy cost-exporter
+#### Install by helm
 ```
 helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
 ```
 
-#### install by kubectl
+#### Install by kubectl
 **NOTE**  you must specify your k8s secret id and secret key in yaml, this is used to access Tencent Cloud Cvm API.
 ```
 kubectl create -f deploy/cost-exporter/ -n crane-system
 ```
-the cost-exporter param has secretId and secretKey, you must provide your cloud provider secret
+The cost-exporter param has secretId and secretKey, you must provide your cloud provider secret
 ```
 containers:
 - name: fadvisor-cost-exporter
@@ -111,8 +111,8 @@ containers:
     - --secretKey=
 ```
 
-### 2. configure the prometheus scrape config and rules
-configure following scrape target to your prometheus. 
+### 2. Configure the prometheus scrape config and rules
+Configure following scrape target to your prometheus. 
 
 ```
 - job_name: "fadvisor-cost-exporter"
@@ -129,7 +129,7 @@ configure following scrape target to your prometheus.
  - `kube-state-metrics` metrics. need to install kube-state-metrics.
 
 
-configure some recording rules to your prometheus.
+Configure some recording rules to your prometheus.
 ```
 recording_rules.yml:
   groups:
@@ -154,8 +154,8 @@ recording_rules.yml:
 
 ```
 
-### 3. import following grafana dashboards to your grafana
-and there are some available grafana dashboards for you if you has installed grafana already.
+### 3. Import following grafana dashboards to your grafana
+And there are some available grafana dashboards for you if you has installed grafana already.
 ```
 ./deploy/helm/fadvisor/charts/grafana/dashboards/cluster-costs.json
 ./deploy/helm/fadvisor/charts/grafana/dashboards/costs-dimension.json
@@ -163,13 +163,13 @@ and there are some available grafana dashboards for you if you has installed gra
 
 ```
 
-#### estimated cluster costs
+#### Estimated cluster costs
 <img src="docs/images/cluster-costs.png">
 
-#### namespace costs 
+#### Namespace costs 
 <img src="docs/images/namespace-costs.png">
 
-#### topk container costs
+#### Topk container costs
 <img src="docs/images/costs-dimension.png">
 
 
