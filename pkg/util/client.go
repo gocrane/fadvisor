@@ -27,7 +27,7 @@ import (
 
 type ClientCreator func(name string) kubernetes.Interface
 
-// CreateK8sClients creates the k8s build in core client and custom client.
+// CreateK8sClient creates the k8s build in core client and custom client.
 func CreateK8sClient(c componentconfig.ClientConnectionConfiguration, maxIdleConnsPerHost int) (ClientCreator, error) {
 	cfg, err := NewK8sConfig(c, maxIdleConnsPerHost)
 	if err != nil {
