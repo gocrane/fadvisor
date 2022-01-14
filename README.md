@@ -1,8 +1,11 @@
-[TOC]
+# Fadvisor: Finance Advisor
 
-# Fadvisor: FinOps Advisor
+[![Go Report Card](https://goreportcard.com/badge/github.com/gocrane/fadvisor)](https://goreportcard.com/report/github.com/gocrane/fadvisor)
+[![GoDoc](https://godoc.org/github.com/gocrane/fadvisor?status.svg)](https://godoc.org/github.com/gocrane/fadvisor)
+[![License](https://img.shields.io/github/license/gocrane/fadvisor)](https://www.apache.org/licenses/LICENSE-2.0.html)
+![GoVersion](https://img.shields.io/github/go-mod/go-version/gocrane/fadvisor)
 
-<img src="docs/images/fadvisor.jpeg">
+<img src="docs/images/fadvisor.png">
 
 ---
 
