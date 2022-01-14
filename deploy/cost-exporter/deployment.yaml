@@ -41,8 +41,19 @@ spec:
           operator: Exists
       containers:
         - name: fadvisor-cost-exporter
-          image: docker.io/gocrane/fadvisor-cost-exporter:8b3ece1
+          image: docker.io/gocrane/fadvisor-cost-exporter
           imagePullPolicy: IfNotPresent
           command:
             - /cost-exporter
             - --v=4
+            - --provider=qcloud
+            - --cloudConfigFile=/etc/cloud/config
+          volumeMounts:
+            - mountPath: /etc/cloud
+              name: cloud-config
+              readOnly: true
+      volumes:
+        - name: cloud-config
+          secret:
+            defaultMode: 420
+            secretName: cloud-config

@@ -1,19 +1,17 @@
 package options
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/spf13/pflag"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apiserver/pkg/server/options"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	componentbaseconfig "k8s.io/component-base/config"
 
-	"github.com/spf13/pflag"
-
-	qcloudconsts "github.com/gocrane/fadvisor/pkg/cloudsdk/qcloud/consts"
 	"github.com/gocrane/fadvisor/pkg/consts"
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprice"
+	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprovider"
 )
 
 // Options hold the command-line options about crane manager
@@ -26,28 +24,15 @@ type Options struct {
 	ClientConfig componentbaseconfig.ClientConnectionConfiguration
 	// SecureServing specifies the server configurations to set up a HTTPS server.
 	SecureServing options.SecureServingOptionsWithLoopback
+	CloudConfig   cloudprovider.CloudConfig
 
 	Debugging componentbaseconfig.DebuggingConfiguration
 
 	MaxIdleConnsPerClient int
 
-	Debug           bool
-	DefaultLimit    int64
-	DefaultLanguage string
-	DefaultTimeout  time.Duration
-	Region          string
-	DomainSuffix    string
-	Scheme          string
-	SecretId        string
-	SecretKey       string
-
-	Provider  string
-	ClusterId string
-	AppId     string
-
 	MetricUpdateInterval time.Duration
 
-	CustomPrice cloudprice.CustomPricing
+	CustomPrice cloudprovider.CustomPricing
 }
 
 // NewOptions builds an empty options.
@@ -72,11 +57,6 @@ func (o *Options) Complete() error {
 
 // Validate all required options.
 func (o *Options) Validate() error {
-	if o.Provider == string(cloudprice.TencentCloud) {
-		if o.SecretId == "" || o.SecretKey == "" {
-			return fmt.Errorf("must specify the secret id and secret key for cloud %v", o.Provider)
-		}
-	}
 	return nil
 }
 
@@ -104,18 +84,8 @@ func (o *Options) AddFlags(flags *pflag.FlagSet) {
 		"The namespace of resource object that is used for locking during "+
 		"leader election.")
 
-	flags.BoolVar(&o.Debug, "debug", false, "Debug mode for cloud sdk")
-	flags.Int64Var(&o.DefaultLimit, "default-limit", qcloudconsts.LIMITS, "Default limit for cloud sdk")
-	flags.StringVar(&o.DefaultLanguage, "default-language", qcloudconsts.LANGUAGE, "Default language for cloud sdk")
-	flags.DurationVar(&o.DefaultTimeout, "default-timeout", qcloudconsts.TIMEOUT, "Default timeout for cloud sdk")
-	flags.StringVar(&o.Region, "region", "", "Region for cloud sdk")
-	flags.StringVar(&o.DomainSuffix, "domain-suffix", "internal.tencentcloudapi.com", "Domain for cloud sdk")
-	flags.StringVar(&o.Scheme, "scheme", "", "Scheme for cloud sdk")
-	flags.StringVar(&o.ClusterId, "clusterid", "", "cluster id of the cluster")
-	flags.StringVar(&o.AppId, "appid", "", "app id of the cluster")
-	flags.StringVar(&o.SecretId, "secretid", "", "secret id of user to access cloud resource api")
-	flags.StringVar(&o.SecretKey, "secretkey", "", "secret key of user to access cloud resource api")
-	flags.StringVar(&o.Provider, "provider", "default", "cloud provider the cost-exporter running on, now support default and qcloud only.")
+	flags.StringVar(&o.CloudConfig.Provider, "provider", "default", "cloud provider the cost-exporter running on, now support default and qcloud only.")
+	flags.StringVar(&o.CloudConfig.CloudConfigFile, "cloudConfigFile", "", "cloudConfigFile specifies path for the cloud configuration.")
 
 	flags.StringVar(&o.ClientConfig.Kubeconfig, "kubeconfig",
 		o.ClientConfig.Kubeconfig, "Path to kubeconfig file with authorization and master location information.")
