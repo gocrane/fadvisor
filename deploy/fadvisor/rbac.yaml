@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fadvisor
+rules:
+  - apiGroups: [ '*' ]
+    resources: [ '*' ]
+    verbs: [ "*" ]
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fadvisor
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fadvisor
+subjects:
+  - kind: ServiceAccount
+    name: fadvisor
+    namespace: crane-system

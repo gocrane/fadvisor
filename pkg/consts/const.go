@@ -5,7 +5,7 @@ import "time"
 const (
 	CraneNamespace = "crane-system"
 
-	CostExporterName = "cost-exporter"
+	CostExporterName = "fadvisor"
 
 	// DefaultLeaseDuration is the default LeaseDuration for leader election.
 	DefaultLeaseDuration = 15 * time.Second
