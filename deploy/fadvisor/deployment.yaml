@@ -1,0 +1,47 @@
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: fadvisor
+  namespace: crane-system
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fadvisor
+  namespace: crane-system
+  labels:
+    app: fadvisor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fadvisor
+  template:
+    metadata:
+      labels:
+        app: fadvisor
+    spec:
+      serviceAccountName: fadvisor
+      tolerations:
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+      containers:
+        - name: fadvisor
+          image: docker.io/gocrane/fadvisor:v0.1.0-9-gcbb4758
+          imagePullPolicy: IfNotPresent
+          command:
+            - /fadvisor
+            - --v=4
+            - --provider=default
+            - --cloudConfigFile=/etc/cloud/config
+          volumeMounts:
+            - mountPath: /etc/cloud
+              name: cloud-config
+              readOnly: true
+      volumes:
+        - name: cloud-config
+          secret:
+            defaultMode: 420
+            secretName: fadvisor

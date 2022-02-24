@@ -33,95 +33,115 @@ Cost model is an implementation of the cost allocation and showback & chargeback
 	   So the containers price in different node type is different.
 
 # Tutorial
-Cost-Exporter is a metrics exporter which collects cloud instance price information by calling Cloud Billing API and exports the price information as metrics. 
+Fadvisor is a metrics exporter which collects cloud instance price information by calling Cloud Billing API and exports the price information as metrics. 
 Any cloud provider can implement the API and Crane will work for the specific Cloud, Tencent Cloud is supported in current release.
 
-## Deploy all components by one command
+## PreRequests
+Install Prometheus
 ```
-helm install fadvisor deploy/helm/fadvisor -n crane-system  --set cost-exporter.extraArgs.provider={cloud provider, now support qcloud} --set cost-exporter.extraArgs.secretid={{your cloud secret id}} --set cost-exporter.extraArgs.secretkey={{your cloud secret key}}
-```
-Except cost-exporter, it will install following components in your system by default.
-```
-dependencies:
-  - name: kube-state-metrics
-    condition: fadvisor.kube-state-metrics.enabled,kube-state-metrics.enabled
-    repository: file://./charts/kube-state-metrics
-  - name: node-exporter
-    condition: fadvisor.node-exporter.enabled,node-exporter.enabled
-    repository: file://./charts/node-exporter
-  - name: prometheus
-    condition: fadvisor.prometheus.enabled,prometheus.enabled
-    repository: file://./charts/prometheus
-  - name: grafana
-    condition: fadvisor.grafana.enabled,grafana.enabled
-    repository: file://./charts/grafana
-```
-
-Install on local, it will use default config.
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install prometheus -n crane-system --set pushgateway.enabled=false --set alertmanager.enabled=false --set server.persistentVolume.enabled=false -f https://raw.githubusercontent.com/gocrane/helm-charts/main/integration/prometheus/override_values.yaml --create-namespace  prometheus-community/prometheus
 
 ```
-helm install fadvisor deploy/helm/fadvisor -n crane-system
+Install Grafana
+```
+helm repo add grafana https://grafana.github.io/helm-charts
+helm install grafana -f https://raw.githubusercontent.com/gocrane/helm-charts/main/integration/grafana/override_values.yaml -n crane-system --create-namespace grafana/grafana
 ```
 
-## Install one by one
+## Deploy fadvisor 
+### Deploy on local
+Install on local such as mac desktop, it will use default config. you can also deploy on cloud by this way, but it will use default config.
 
-To install cost-exporter, you must specify cloud provider and your cloud account credentials as secretid & secretkey.
-If you are running Crane in your private cloud, default price will be applied. 
-
 ```
-helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
+helm repo add crane https://gocrane.github.io/helm-charts
+helm install fadvisor -n crane-system --create-namespace crane/fadvisor
 ```
 
-Install other components.
+### Deploy on cloud
+If you deploy fadvisor on cloud, now it support tencent cloud. you need provide a qcloud config file which include cloud credentials as following, make sure you specify your `clusterId`,`secretId`,`secretKey`,`region`
+
 ```
-helm install kube-state-metrics deploy/helm/fadvisor/charts/kube-state-metrics -n crane-system
-helm install node-exporter deploy/helm/fadvisor/charts/node-exporter -n crane-system
-helm install prometheus deploy/helm/fadvisor/charts/prometheus -n crane-system
-helm install grafana deploy/helm/fadvisor/charts/grafana -n crane-system
+[credentials]
+clusterId={your cluster id}
+appId=app1
+secretId={your cloud provider credential secret id}
+secretKey={your cloud provider credential secret key}
+[clientProfile]
+defaultLimit=100
+defaultLanguage=zh-CN
+defaultTimeoutSeconds=10
+region={your cluster region, such as ap-beijing、ap-shanghai、ap-guangzhou、ap-shenzhen and so on, you can find region name in your cloud provider console}
+domainSuffix=internal.tencentcloudapi.com
+scheme=
 ```
+then execute following commands, suppose your config file name is qcloud-config.ini in your current directory:
+```
+helm repo add crane https://gocrane.github.io/helm-charts
+helm install fadvisor --set-file cloudConfigFile=qcloud-config.ini --set extraArgs.provider=qcloud  -n crane-system --create-namespace crane/fadvisor
+```
+Except Fadvisor, it will install following components in your system by default.
+
+ - kube-state-metrics
+ - node-exporter
+ - prometheus
+ - grafana
 
 
 ## Integrated with existing monitoring components
-If you have Prometheus and Grafana installed, you can just deploy the exporter and change related configuration.
+If you have Prometheus and Grafana installed, you can just deploy fadvisor and change related configuration.
 
-You can deploy the cost-exporter to your tke cluster to collect the metric, use prometheus to scrape the metric, and following dashboards can be used;
+You can deploy the fadvisor to your tke cluster to collect the metric, use prometheus to scrape the metric, and following dashboards can be used;
 
-### 1. Deploy cost-exporter
+### 1. Deploy fadvisor
 #### Install by helm
 ```
-helm install cost-exporter deploy/helm/fadvisor/charts/cost-exporter -n crane-system --set extraArgs.provider={cloud provider, now support qcloud} --set extraArgs.secretid={{your cloud secret id}} --set extraArgs.secretkey={{your cloud secret key}}
+helm repo add crane https://gocrane.github.io/helm-charts
+helm install fadvisor -n crane-system --create-namespace crane/fadvisor
 ```
 
 #### Install by kubectl
-**NOTE**  you must specify your k8s secret id and secret key in yaml, this is used to access Tencent Cloud Cvm API.
+**NOTE**  you must specify your k8s secret id and secret key in `config` file, this is used to access Tencent Cloud Cvm API.
+
 ```
-kubectl create -f deploy/cost-exporter/ -n crane-system
+[credentials]
+clusterId={your cluster id}
+appId=app1
+secretId={your cloud provider credential secret id}
+secretKey={your cloud provider credential secret key}
+[clientProfile]
+defaultLimit=100
+defaultLanguage=zh-CN
+defaultTimeoutSeconds=10
+region={your cluster region, such as ap-beijing、ap-shanghai、ap-guangzhou、ap-shenzhen and so on, you can find region name in your cloud provider console}
+domainSuffix=internal.tencentcloudapi.com
+scheme=
 ```
-The cost-exporter param has secretId and secretKey, you must provide your cloud provider secret
+then execute `cat config | base64`, paste the secret to following secret.yaml's config.
 ```
-containers:
-- name: fadvisor-cost-exporter
-  image: docker.io/gocrane/fadvisor-cost-exporter:6927f01
-  imagePullPolicy: IfNotPresent
-  command:
-    - /cost-exporter
-    - --v=4
-    - --provider=qcloud
-    - --secretId=
-    - --secretKey=
+apiVersion: v1
+kind: Secret
+metadata:
+  name: fadvisor
+data:
+  config: W2NyZWRlbnRpYWxzXQpjbHVzdGVySWQ9Y2x1c3RlcjEKYXBwSWQ9YXBwMQpzZWNyZXRJZD1pZDEKc2VjcmV0S2V5PWtleTEKW2NsaWVudFByb2ZpbGVdCmRlYnVnPXRydWUKZGVmYXVsdExpbWl0PTEKZGVmYXVsdExhbmd1YWdlPUNICmRlZmF1bHRUaW1lb3V0U2Vjb25kcz0xMApyZWdpb249c2hhbmdoYWkKZG9tYWluU3VmZml4PWNsb3VkLnRlbmNlbnQuY29tCnNjaGVtZT1odHRwCg==
+```
+then deploy by kubectl.
+```
+kubectl create -f deploy/fadvisor/ -n crane-system
 ```
 
 ### 2. Configure the prometheus scrape config and rules
 Configure following scrape target to your prometheus. 
 
 ```
-- job_name: "fadvisor-cost-exporter"
+- job_name: "fadvisor"
     honor_timestamps: true
     scrape_interval: 5m
     scheme: http
     metrics_path: /metrics
     static_configs:
-      - targets: ['cost-exporter.crane-system.svc.cluster.local:8081']
+      - targets: ['fadvisor.crane-system.svc.cluster.local:8081']
 ```
 **NOTE**, except cost-exporter, your prometheus must have scraped the kubernetes metrics including:
  - `kubelet-cadvisor` metrics.
