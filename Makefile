@@ -22,7 +22,7 @@ REGISTRY_USER_NAME?=""
 REGISTRY_PASSWORD?=""
 
 # Image URL to use all building/pushing image targets
-COST_EXPORTER_IMG ?= "${REGISTRY}/${REGISTRY_NAMESPACE}/fadvisor-cost-exporter:${GIT_VERSION}"
+FADVISOR_IMG ?= "${REGISTRY}/${REGISTRY_NAMESPACE}/fadvisor:${GIT_VERSION}"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -98,32 +98,32 @@ test: fmt vet goimports ## Run tests.
 
 
 .PHONY: build
-build: cost-exporter
+build: fadvisor
 
 .PHONY: all
-all: test lint vet cost-exporter
+all: test lint vet fadvisor
 
-.PHONY: cost-exporter
-cost-exporter: ## Build binary with the cost-exporter.
-	CGO_ENABLED=0 GOOS=$(GOOS) go build -ldflags $(LDFLAGS) -o bin/cost-exporter cmd/cost-exporter/main.go
+.PHONY: fadvisor
+fadvisor: ## Build binary with the fadvisor.
+	CGO_ENABLED=0 GOOS=$(GOOS) go build -ldflags $(LDFLAGS) -o bin/fadvisor cmd/fadvisor/main.go
 
 .PHONY: images
-images: image-cost-exporter
+images: image-fadvisor
 
-.PHONY: image-cost-exporter
-image-cost-exporter: test ## Build docker image with the cost-exporter.
-	docker build --build-arg LDFLAGS=$(LDFLAGS) --build-arg PKGNAME=cost-exporter -t ${COST_EXPORTER_IMG} .
+.PHONY: image-fadvisor
+image-fadvisor: test ## Build docker image with the fadvisor.
+	docker build --build-arg LDFLAGS=$(LDFLAGS) --build-arg PKGNAME=fadvisor -t ${FADVISOR_IMG} .
 
 
 .PHONY: push-images
-push-images: push-image-cost-exporter
+push-images: push-image-fadvisor
 
-.PHONY: push-image-cost-exporter
-push-image-cost-exporter: ## Push images.
+.PHONY: push-image-fadvisor
+push-image-fadvisor: ## Push images.
 ifneq ($(REGISTRY_USER_NAME), "")
 	docker login -u $(REGISTRY_USER_NAME) -p $(REGISTRY_PASSWORD) ${REGISTRY}
 endif
-	docker push ${COST_EXPORTER_IMG}
+	docker push ${FADVISOR_IMG}
 
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
@@ -140,20 +140,6 @@ rm -rf $$TMP_DIR ;\
 }
 endef
 
-controller-gen:
-ifeq (, $(shell which controller-gen))
-	@{ \
-	set -e ;\
-	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$CONTROLLER_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0 ;\
-	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
-	}
-CONTROLLER_GEN=$(shell go env GOPATH)/bin/controller-gen
-else
-CONTROLLER_GEN=$(shell which controller-gen)
-endif
 
 golangci-lint:
 ifeq (, $(shell which golangci-lint))
