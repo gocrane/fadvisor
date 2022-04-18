@@ -10,8 +10,8 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	componentbaseconfig "k8s.io/component-base/config"
 
+	"github.com/gocrane/fadvisor/pkg/cloud"
 	"github.com/gocrane/fadvisor/pkg/consts"
-	"github.com/gocrane/fadvisor/pkg/cost-exporter/cloudprovider"
 )
 
 // Options hold the command-line options about crane manager
@@ -24,7 +24,7 @@ type Options struct {
 	ClientConfig componentbaseconfig.ClientConnectionConfiguration
 	// SecureServing specifies the server configurations to set up a HTTPS server.
 	SecureServing options.SecureServingOptionsWithLoopback
-	CloudConfig   cloudprovider.CloudConfig
+	CloudConfig   cloud.CloudConfig
 
 	Debugging componentbaseconfig.DebuggingConfiguration
 
@@ -32,12 +32,16 @@ type Options struct {
 
 	MetricUpdateInterval time.Duration
 
-	CustomPrice cloudprovider.CustomPricing
+	CustomPrice cloud.CustomPricing
+
+	ComparatorMode    bool
+	ComparatorOptions *ComparatorOptions
 }
 
 // NewOptions builds an empty options.
 func NewOptions() *Options {
 	return &Options{
+		ComparatorOptions: NewComparatorOptions(),
 		LeaderElection: componentbaseconfig.LeaderElectionConfiguration{
 			ResourceLock:      resourcelock.LeasesResourceLock,
 			ResourceNamespace: consts.CraneNamespace,
@@ -51,13 +55,12 @@ func NewOptions() *Options {
 
 // Complete completes all the required options.
 func (o *Options) Complete() error {
-
-	return nil
+	return o.ComparatorOptions.Complete()
 }
 
 // Validate all required options.
-func (o *Options) Validate() error {
-	return nil
+func (o *Options) Validate() []error {
+	return o.ComparatorOptions.Validate()
 }
 
 func (o *Options) ApplyTo() {
@@ -109,4 +112,7 @@ func (o *Options) AddFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&o.CustomPrice.Provider, "custom-price-provider", "default", "custom pricing config provider")
 	flags.Float64Var(&o.CustomPrice.CpuHourlyPrice, "custom-price-cpu", 0.031611, "cpu hourly unit price of one core")
 	flags.Float64Var(&o.CustomPrice.RamGBHourlyPrice, "custom-price-ram", 0.004237, "ram gb hourly unit price")
+
+	flags.BoolVar(&o.ComparatorMode, "comparator-mode", false, "run as fadvisor cost comparator mode, it is an offline analysis tool")
+	o.ComparatorOptions.AddFlags(flags)
 }
