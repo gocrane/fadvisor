@@ -3,13 +3,10 @@ package util
 import (
 	"fmt"
 	"hash/fnv"
-	"net"
-	"net/http"
 	"os"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	utilnet "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -20,7 +17,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	ref "k8s.io/client-go/tools/reference"
-	"k8s.io/client-go/transport"
 	componentconfig "k8s.io/component-base/config"
 	"k8s.io/klog/v2"
 )
@@ -77,38 +73,39 @@ func NewK8sConfig(c componentconfig.ClientConnectionConfiguration, maxIdleConnsP
 	k8sCfg.QPS = c.QPS
 	k8sCfg.Burst = int(c.Burst)
 
-	if err := setTransport(k8sCfg, maxIdleConnsPerHost); err != nil {
-		return nil, err
-	}
+	//if err := setTransport(k8sCfg, maxIdleConnsPerHost); err != nil {
+	//	return nil, err
+	//}
 
 	return k8sCfg, err
 }
 
-func setTransport(k8sCfg *rest.Config, maxIdleConnsPerHost int) error {
-	transportConfig, err := k8sCfg.TransportConfig()
-	if err != nil {
-		return err
-	}
-	tlsConfig, err := transport.TLSConfigFor(transportConfig)
-	if err != nil {
-		return err
-	}
-	k8sCfg.Transport = utilnet.SetTransportDefaults(&http.Transport{
-		Proxy:               http.ProxyFromEnvironment,
-		TLSHandshakeTimeout: 10 * time.Second,
-		TLSClientConfig:     tlsConfig,
-		MaxIdleConnsPerHost: maxIdleConnsPerHost,
-		DialContext: (&net.Dialer{
-			Timeout:   30 * time.Second,
-			KeepAlive: 30 * time.Second,
-		}).DialContext,
-	})
-	// Overwrite TLS-related fields from config to avoid collision with
-	// Transport field.
-	k8sCfg.TLSClientConfig = rest.TLSClientConfig{}
-
-	return nil
-}
+// nolint:unused
+//func setTransport(k8sCfg *rest.Config, maxIdleConnsPerHost int) error {
+//	transportConfig, err := k8sCfg.TransportConfig()
+//	if err != nil {
+//		return err
+//	}
+//	tlsConfig, err := transport.TLSConfigFor(transportConfig)
+//	if err != nil {
+//		return err
+//	}
+//	k8sCfg.Transport = utilnet.SetTransportDefaults(&http.Transport{
+//		Proxy:               http.ProxyFromEnvironment,
+//		TLSHandshakeTimeout: 10 * time.Second,
+//		TLSClientConfig:     tlsConfig,
+//		MaxIdleConnsPerHost: maxIdleConnsPerHost,
+//		DialContext: (&net.Dialer{
+//			Timeout:   30 * time.Second,
+//			KeepAlive: 30 * time.Second,
+//		}).DialContext,
+//	})
+//	// Overwrite TLS-related fields from config to avoid collision with
+//	// Transport field.
+//	k8sCfg.TLSClientConfig = rest.TLSClientConfig{}
+//
+//	return nil
+//}
 
 // CreateLeaderElectionConfig creates a LeaderElectionConfig.
 func CreateLeaderElectionConfig(
