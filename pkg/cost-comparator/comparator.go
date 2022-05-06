@@ -1288,10 +1288,10 @@ func (c *Comparator) fetchContainerData() map[string] /*kind*/ map[types.Namespa
 				for _, container := range workload.PodRef.Spec.Containers {
 					cpu := metricnaming.ResourceToContainerMetricNamer(c.config.ClusterId, nn.Namespace, nn.Name, container.Name, v1.ResourceCPU)
 					mem := metricnaming.ResourceToContainerMetricNamer(c.config.ClusterId, nn.Namespace, nn.Name, container.Name, v1.ResourceMemory)
-					cpuRequest := metricnaming.ContainerMetricNamer(c.config.ClusterId, nn.Namespace, nn.Name, container.Name, consts.MetricCpuRequest, labels.Everything())
-					memRequest := metricnaming.ContainerMetricNamer(c.config.ClusterId, nn.Namespace, nn.Name, container.Name, consts.MetricMemRequest, labels.Everything())
-					cpuLimit := metricnaming.ContainerMetricNamer(c.config.ClusterId, nn.Namespace, nn.Name, container.Name, consts.MetricCpuLimit, labels.Everything())
-					memLimit := metricnaming.ContainerMetricNamer(c.config.ClusterId, nn.Namespace, nn.Name, container.Name, consts.MetricMemLimit, labels.Everything())
+					cpuRequest := metricnaming.ContainerMetricNamer(c.config.ClusterId, kind, nn.Namespace, nn.Name, container.Name, consts.MetricCpuRequest, labels.Everything())
+					memRequest := metricnaming.ContainerMetricNamer(c.config.ClusterId, kind, nn.Namespace, nn.Name, container.Name, consts.MetricMemRequest, labels.Everything())
+					cpuLimit := metricnaming.ContainerMetricNamer(c.config.ClusterId, kind, nn.Namespace, nn.Name, container.Name, consts.MetricCpuLimit, labels.Everything())
+					memLimit := metricnaming.ContainerMetricNamer(c.config.ClusterId, kind, nn.Namespace, nn.Name, container.Name, consts.MetricMemLimit, labels.Everything())
 
 					cpuTsList, err := c.dataSource.QueryTimeSeries(context.TODO(), cpu, qRange.Start, qRange.End, qRange.Step)
 					if err != nil {

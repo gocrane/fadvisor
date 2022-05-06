@@ -261,7 +261,7 @@ func (b *builder) containerQuery(metric *metricquery.Metric, behavior querybuild
 			}), nil
 		} else {
 			return promQuery(&metricquery.PrometheusQuery{
-				Query: fmt.Sprintf(ContainerResourceRequestExprTemplate, metric.Container.ContainerName, v1.ResourceCPU.String(), metric.Container.WorkloadName, metric.Container.Namespace, metric.Container.Kind, clusterCond, metric.Container.WorkloadName, metric.Container.Namespace, clusterCond),
+				Query: fmt.Sprintf(ContainerResourceRequestExprTemplate, metric.Container.ContainerName, v1.ResourceCPU.String(), metric.Container.WorkloadName, metric.Container.Namespace, clusterCond, metric.Container.Kind, metric.Container.WorkloadName, metric.Container.Namespace, clusterCond),
 			}), nil
 		}
 	case consts.MetricCpuLimit:
