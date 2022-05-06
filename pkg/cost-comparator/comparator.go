@@ -1510,27 +1510,25 @@ func (c *Comparator) GetAllWorkloadRecommendedData() map[string]map[types.Namesp
 						}
 					}
 				}
-
-				wrd.RecommendedSpec = c.baselineCloud.Pod2ServerlessSpec(recPod)
-				wrd.RecommendedSpec.PodRef = recPod
-				wrd.RecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
-
-				maxRecSpec := c.baselineCloud.Pod2ServerlessSpec(maxRecPod)
-				maxRecSpec.PodRef = maxRecPod
-				wrd.MaxRecommendedSpec = &maxRecSpec
-				wrd.MaxRecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
-
-				maxMarginRecSpec := c.baselineCloud.Pod2ServerlessSpec(maxMarginRecPod)
-				maxMarginRecSpec.PodRef = maxMarginRecPod
-				wrd.MaxMarginRecommendedSpec = &maxMarginRecSpec
-				wrd.MaxMarginRecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
-
-				percentRecSpec := c.baselineCloud.Pod2ServerlessSpec(pertRecPod)
-				percentRecSpec.PodRef = pertRecPod
-				wrd.PercentRecommendedSpec = &percentRecSpec
-				wrd.PercentRecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
-
 			}
+			wrd.RecommendedSpec = c.baselineCloud.Pod2ServerlessSpec(recPod)
+			wrd.RecommendedSpec.PodRef = recPod
+			wrd.RecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
+
+			maxRecSpec := c.baselineCloud.Pod2ServerlessSpec(maxRecPod)
+			maxRecSpec.PodRef = maxRecPod
+			wrd.MaxRecommendedSpec = &maxRecSpec
+			wrd.MaxRecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
+
+			maxMarginRecSpec := c.baselineCloud.Pod2ServerlessSpec(maxMarginRecPod)
+			maxMarginRecSpec.PodRef = maxMarginRecPod
+			wrd.MaxMarginRecommendedSpec = &maxMarginRecSpec
+			wrd.MaxMarginRecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
+
+			percentRecSpec := c.baselineCloud.Pod2ServerlessSpec(pertRecPod)
+			percentRecSpec.PodRef = pertRecPod
+			wrd.PercentRecommendedSpec = &percentRecSpec
+			wrd.PercentRecommendedSpec.GoodsNum = workloadPodSpec.GoodsNum
 			if klog.V(7).Enabled() {
 				data, _ := jsoniter.Marshal(wrd)
 				klog.V(7).Infof("Workload %v, %s", nn, wrd, string(data))
