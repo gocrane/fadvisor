@@ -101,7 +101,7 @@ func WorkloadMetricNamer(clusterid string, target *corev1.ObjectReference, metri
 	}
 }
 
-func ContainerMetricNamer(clusterid, namespace, workloadName, containername, metricName string, containerLabelSelector labels.Selector) MetricNamer {
+func ContainerMetricNamer(clusterid, kind, namespace, workloadName, containername, metricName string, containerLabelSelector labels.Selector) MetricNamer {
 	// container
 	set := labels.Set{}
 	if clusterid != "" {
@@ -134,6 +134,7 @@ func ContainerMetricNamer(clusterid, namespace, workloadName, containername, met
 			MetricName: metricName,
 			Container: &metricquery.ContainerNamerInfo{
 				Namespace:     namespace,
+				Kind:          kind,
 				WorkloadName:  workloadName,
 				ContainerName: containername,
 				Selector:      containerLabelSelector,
