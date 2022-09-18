@@ -125,17 +125,19 @@ func SetCustomPricing(obj *CustomPricing, name string, value string) error {
 		return fmt.Errorf("cannot set %s field value", name)
 	}
 
-	structFieldType := structFieldValue.Type()
-	val := reflect.ValueOf(value)
-	if structFieldType != val.Type() {
-		return fmt.Errorf("provided value type didn't match custom pricing field type")
-	}
 	if structFieldValue.Kind() == reflect.Float64 || structFieldValue.Kind() == reflect.Float32 {
 		t, err := strconv.ParseFloat(value, 64)
 		if err != nil {
 			return err
 		}
-		val = reflect.ValueOf(t)
+		val := reflect.ValueOf(t)
+		structFieldValue.Set(val)
+		return nil
+	}
+	structFieldType := structFieldValue.Type()
+	val := reflect.ValueOf(value)
+	if structFieldType != val.Type() {
+		return fmt.Errorf("provided value type didn't match custom pricing field type")
 	}
 	structFieldValue.Set(val)
 	return nil

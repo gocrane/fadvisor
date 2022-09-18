@@ -2,121 +2,57 @@ package cloud
 
 import (
 	"reflect"
+	"strings"
 	"testing"
-
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func TestDetectRegion(t *testing.T) {
-	tests := []struct {
-		name string
-		node *v1.Node
-		want string
-	}{
-		{
-			name: "base",
-			node: &v1.Node{},
-			want: "",
-		},
-		{
-			name: "qcloud with no node labels",
-			node: &v1.Node{
-				Spec: v1.NodeSpec{
-					ProviderID: "qcloud://01",
-				},
-			},
-			want: "",
-		},
-		{
-			name: "qcloud with node labels",
-			node: &v1.Node{
-				Spec: v1.NodeSpec{
-					ProviderID: "qcloud://01",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						v1.LabelTopologyRegion: "gz",
-					},
-				},
-			},
-			want: "ap-guangzhou",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := DetectRegion(tt.node); got != tt.want {
-				t.Errorf("DetectRegion() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDetectProvider(t *testing.T) {
-	tests := []struct {
-		name string
-		node *v1.Node
-		want ProviderKind
-	}{
-		{
-			name: "base",
-			node: &v1.Node{},
-			want: "default",
-		},
-		{
-			name: "qcloud",
-			node: &v1.Node{
-				Spec: v1.NodeSpec{
-					ProviderID: "qcloud://01",
-				},
-			},
-			want: "qcloud",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := DetectProvider(tt.node); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DetectProvider() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewProviderConfig(t *testing.T) {
-	tests := []struct {
-		name          string
-		customPricing *CustomPricing
-		want          *PriceConfig
-	}{
-		{
-			name:          "base",
-			customPricing: &CustomPricing{},
-			want: &PriceConfig{
-				customPricing: &CustomPricing{},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewProviderConfig(tt.customPricing); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewProviderConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestPriceConfig_UpdateConfigFromConfigMap(t *testing.T) {
 	tests := []struct {
 		name      string
-		pc        *PriceConfig
 		priceConf map[string]string
+		pc        *PriceConfig
 		want      *CustomPricing
 		wantErr   bool
-	}{}
+	}{
+		{
+			name:      "base",
+			priceConf: map[string]string{},
+			pc: &PriceConfig{
+				customPricing: &CustomPricing{},
+			},
+			want:    &CustomPricing{},
+			wantErr: false,
+		},
+		{
+			name: "SetCustomPricing raise an error",
+			priceConf: map[string]string{
+				"CpuHourlyPrice": "",
+			},
+			pc: &PriceConfig{
+				customPricing: &CustomPricing{},
+			},
+			want:    &CustomPricing{},
+			wantErr: true,
+		},
+		{
+			name: "SetCustomPricing ok",
+			priceConf: map[string]string{
+				"CpuHourlyPrice": "1.23",
+			},
+			pc: &PriceConfig{
+				customPricing: &CustomPricing{},
+			},
+			want: &CustomPricing{
+				CpuHourlyPrice: 1.23,
+			},
+			wantErr: false,
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := tt.pc.UpdateConfigFromConfigMap(tt.priceConf)
-			if (err != nil) != tt.wantErr {
+			gotErr := err != nil
+			if gotErr != tt.wantErr {
 				t.Errorf("PriceConfig.UpdateConfigFromConfigMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
@@ -127,59 +63,61 @@ func TestPriceConfig_UpdateConfigFromConfigMap(t *testing.T) {
 	}
 }
 
-func TestPriceConfig_GetConfig(t *testing.T) {
-	tests := []struct {
-		name    string
-		pc      *PriceConfig
-		want    *CustomPricing
-		wantErr error
-	}{
-		{
-			name: "base",
-			pc: &PriceConfig{
-				customPricing: &CustomPricing{},
-			},
-			want:    &CustomPricing{},
-			wantErr: nil,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.pc.GetConfig()
-			if err != tt.wantErr {
-				t.Errorf("PriceConfig.GetConfig() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("PriceConfig.GetConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestSetCustomPricing(t *testing.T) {
 	tests := []struct {
-		testName   string
-		obj        *CustomPricing
 		name       string
-		value      string
+		obj        *CustomPricing
+		filedName  string
+		fieldValue string
 		wantErr    bool
 		wantErrMsg string
 	}{
 		{
-			testName:   "base",
+			name:       "base",
 			obj:        &CustomPricing{},
 			wantErr:    true,
 			wantErrMsg: "no such field:  in obj",
 		},
+		{
+			name:      "value is not float type",
+			filedName: "CpuHourlyPrice",
+			obj: &CustomPricing{
+				CpuHourlyPrice: 1.23,
+			},
+			wantErr:    true,
+			wantErrMsg: "invalid syntax",
+		},
+		{
+			name:       "value is float type",
+			filedName:  "CpuHourlyPrice",
+			fieldValue: "1.23",
+			obj: &CustomPricing{
+				CpuHourlyPrice: 1.23,
+			},
+			wantErr:    false,
+			wantErrMsg: "",
+		},
+		{
+			name:       "value is string type",
+			filedName:  "Provider",
+			fieldValue: string(TencentCloud),
+			obj: &CustomPricing{
+				Provider: "qcloud",
+			},
+			wantErr:    false,
+			wantErrMsg: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := SetCustomPricing(tt.obj, tt.name, tt.value)
+			err := SetCustomPricing(tt.obj, tt.filedName, tt.fieldValue)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SetCustomPricing() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			if err.Error() != tt.wantErrMsg {
+			if err == nil {
+				return
+			}
+			if !strings.Contains(err.Error(), tt.wantErrMsg) {
 				t.Errorf("SetCustomPricing() error = %v, wantErrMsg %v", err.Error(), tt.wantErrMsg)
 			}
 		})
