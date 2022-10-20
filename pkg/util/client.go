@@ -113,6 +113,10 @@ func CreateLeaderElectionConfig(
 	k8sClient kubernetes.Interface,
 	eventRecorder events.EventRecorder,
 	LeaderElection componentconfig.LeaderElectionConfiguration) (*leaderelection.LeaderElectionConfig, error) {
+	if !LeaderElection.LeaderElect {
+		return nil, nil
+	}
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("unable to get hostname: %v", err)
