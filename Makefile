@@ -111,7 +111,7 @@ fadvisor: ## Build binary with the fadvisor.
 images: image-fadvisor
 
 .PHONY: image-fadvisor
-image-fadvisor: test ## Build docker image with the fadvisor.
+image-fadvisor:  ## Build docker image with the fadvisor.
 	docker build --build-arg LDFLAGS=$(LDFLAGS) --build-arg PKGNAME=fadvisor -t ${FADVISOR_IMG} .
 
 
