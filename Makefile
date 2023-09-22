@@ -56,6 +56,10 @@ help: ## Display this help.
 
 ##@ Development
 
+.PHONY: echoLDFLAGS
+echoLDFLAGS:
+	@echo $(LDFLAGS)
+
 .PHONY: fmt
 fmt: ## Run go fmt against code.
 	go fmt ./...

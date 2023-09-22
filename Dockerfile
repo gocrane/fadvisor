@@ -22,7 +22,7 @@ COPY staging staging/
 RUN go mod download
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -a -o ${PKGNAME} /go/src/github.com/gocrane/fadvisor/cmd/${PKGNAME}/main.go
+RUN go build -ldflags="${LDFLAGS}" -a -o ${PKGNAME} /go/src/github.com/gocrane/fadvisor/cmd/${PKGNAME}/main.go
 
 FROM alpine:3.13.5
 WORKDIR /
