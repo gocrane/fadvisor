@@ -21,6 +21,8 @@ COPY staging staging/
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
 
+RUN apk add gcc
+
 # Build
 RUN go build -ldflags="${LDFLAGS}" -a -o ${PKGNAME} /go/src/github.com/gocrane/fadvisor/cmd/${PKGNAME}/main.go
 
