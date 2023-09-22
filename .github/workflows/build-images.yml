@@ -9,6 +9,7 @@ on:
       - '**.go'
       - 'go.*'
       - '**.yml'
+      - 'Dockerfile'
   push:
     paths:
       - 'cmd/**'
@@ -16,6 +17,7 @@ on:
       - '**.go'
       - 'go.*'
       - '**.yml'
+      - 'Dockerfile'
   workflow_dispatch:
 
 jobs:
