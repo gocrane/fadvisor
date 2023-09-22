@@ -165,7 +165,7 @@ jobs:
 
             #### Ghcr Registry
 
-            Overview: https://github.com/orgs/gocrane/packages?repo_name=crane
+            Overview: https://github.com/orgs/gocrane/packages?repo_name=fadvisor
 
             | Image                                         | Pull Command                                              |
             | --------------------------------------------- | --------------------------------------------------------- |
