@@ -41,7 +41,7 @@ Any cloud provider can implement the API and Crane will work for the specific Cl
 Install Prometheus
 ```
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm install prometheus -n crane-system --set pushgateway.enabled=false --set alertmanager.enabled=false --set server.persistentVolume.enabled=false -f https://raw.githubusercontent.com/gocrane/helm-charts/main/integration/prometheus/override_values.yaml --create-namespace  prometheus-community/prometheus
+helm install prometheus -n crane-system --set prometheus-pushgateway.enabled=false --set alertmanager.enabled=false --set server.persistentVolume.enabled=false -f https://raw.githubusercontent.com/gocrane/helm-charts/main/integration/prometheus/override_values.yaml --create-namespace  prometheus-community/prometheus
 
 ```
 Install Grafana
